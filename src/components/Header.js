@@ -1,3 +1,11 @@
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import {
+  setUserLoginDetails,
+  selectUserName,
+  selectUserPhoto,
+} from "../features/user/userSlice";
+
 import styled from "styled-components";
 import logoImg from "../assets/logo.svg";
 
@@ -9,49 +17,76 @@ import originalImg from "../assets/original-icon.svg";
 import moviesImg from "../assets/movie-icon.svg";
 import seriesImg from "../assets/series-icon.svg";
 import { auth, provider } from "../firebase";
+import { useEffect } from "react";
+
 const Header = (props) => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const userName = useSelector(selectUserName);
+  const userPhoto = useSelector(selectUserPhoto);
+
   const handleAuth = () => {
     auth
       .signInWithPopup(provider)
       .then((result) => {
-        console.log(result);
+        setUser(result.user);
       })
       .catch((error) => {
         alert(error.message);
       });
   };
+
+  const setUser = (user) => {
+    dispatch(
+      setUserLoginDetails({
+        name: user.displayName,
+        email: user.email,
+        photo: user.photoURL,
+      })
+    );
+  };
+
   return (
     <Nav>
       <Logo>
         <img src={logoImg} alt="" />
       </Logo>
-      <NavMenu>
-        <a href="/home">
-          <img src={homeImg} alt="home" />
-          <span>HOME</span>
-        </a>
-        <a>
-          <img src={searchImg} alt="search" />
-          <span>SEARCH</span>
-        </a>
-        <a href="/home">
-          <img src={watchImg} alt="home" />
-          <span>WATCHLIST</span>
-        </a>
-        <a href="/home">
-          <img src={originalImg} alt="" />
-          <span>ORIGINAL</span>
-        </a>
-        <a href="/home">
-          <img src={moviesImg} alt="" />
-          <span>MOVIES</span>
-        </a>
-        <a href="/home">
-          <img src={seriesImg} alt="" />
-          <span>SERIES</span>
-        </a>
-      </NavMenu>
-      <Login onClick={handleAuth}>Login</Login>
+
+      {!userName ? (
+        <Login onClick={handleAuth}>Login</Login>
+      ) : (
+        <>
+          <NavMenu>
+            <a href="/home">
+              <img src={homeImg} alt="home" />
+              <span>HOME</span>
+            </a>
+            <a>
+              <img src={searchImg} alt="search" />
+              <span>SEARCH</span>
+            </a>
+            <a href="/home">
+              <img src={watchImg} alt="home" />
+              <span>WATCHLIST</span>
+            </a>
+            <a href="/home">
+              <img src={originalImg} alt="" />
+              <span>ORIGINAL</span>
+            </a>
+            <a href="/home">
+              <img src={moviesImg} alt="" />
+              <span>MOVIES</span>
+            </a>
+            <a href="/home">
+              <img src={seriesImg} alt="" />
+              <span>SERIES</span>
+            </a>
+          </NavMenu>
+          <UserImg>
+            <img src={userPhoto} />
+          </UserImg>
+        </>
+      )}
     </Nav>
   );
 };
@@ -156,6 +191,12 @@ const Login = styled.a`
   &:hover {
     background-color: #f9f9f9;
     color: #000;
+  }
+`;
+
+const UserImg = styled.div`
+  img: {
+    height: 100%;
   }
 `;
 
