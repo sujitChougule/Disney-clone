@@ -1,3 +1,11 @@
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import {
+  setUserLoginDetails,
+  selectUserName,
+  selectUserPhoto,
+} from "../features/user/userSlice";
+
 import styled from "styled-components";
 import logoImg from "../assets/logo.svg";
 
@@ -9,49 +17,99 @@ import originalImg from "../assets/original-icon.svg";
 import moviesImg from "../assets/movie-icon.svg";
 import seriesImg from "../assets/series-icon.svg";
 import { auth, provider } from "../firebase";
+import { useEffect } from "react";
+import { setSignOutState } from "../features/user/userSlice";
+
 const Header = (props) => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const userName = useSelector(selectUserName);
+  const userPhoto = useSelector(selectUserPhoto);
+
+  useEffect(() => {
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        setUser(user);
+        navigate("/home");
+      }
+    });
+  }, [userName]);
+
   const handleAuth = () => {
-    auth
-      .signInWithPopup(provider)
-      .then((result) => {
-        console.log(result);
-      })
-      .catch((error) => {
-        alert(error.message);
-      });
+    if (!userName) {
+      auth
+        .signInWithPopup(provider)
+        .then((result) => {
+          setUser(result.user);
+        })
+        .catch((error) => {
+          alert(error.message);
+        });
+    } else if (userName) {
+      auth
+        .signOut()
+        .then(() => {
+          dispatch(setSignOutState());
+          navigate("/");
+        })
+        .catch((error) => alert(error.message));
+    }
   };
+
+  const setUser = (user) => {
+    dispatch(
+      setUserLoginDetails({
+        name: user.displayName,
+        email: user.email,
+        photo: user.photoURL,
+      })
+    );
+  };
+
   return (
     <Nav>
       <Logo>
         <img src={logoImg} alt="" />
       </Logo>
-      <NavMenu>
-        <a href="/home">
-          <img src={homeImg} alt="home" />
-          <span>HOME</span>
-        </a>
-        <a>
-          <img src={searchImg} alt="search" />
-          <span>SEARCH</span>
-        </a>
-        <a href="/home">
-          <img src={watchImg} alt="home" />
-          <span>WATCHLIST</span>
-        </a>
-        <a href="/home">
-          <img src={originalImg} alt="" />
-          <span>ORIGINAL</span>
-        </a>
-        <a href="/home">
-          <img src={moviesImg} alt="" />
-          <span>MOVIES</span>
-        </a>
-        <a href="/home">
-          <img src={seriesImg} alt="" />
-          <span>SERIES</span>
-        </a>
-      </NavMenu>
-      <Login onClick={handleAuth}>Login</Login>
+
+      {!userName ? (
+        <Login onClick={handleAuth}>Login</Login>
+      ) : (
+        <>
+          <NavMenu>
+            <a href="/home">
+              <img src={homeImg} alt="home" />
+              <span>HOME</span>
+            </a>
+            <a>
+              <img src={searchImg} alt="search" />
+              <span>SEARCH</span>
+            </a>
+            <a href="/home">
+              <img src={watchImg} alt="home" />
+              <span>WATCHLIST</span>
+            </a>
+            <a href="/home">
+              <img src={originalImg} alt="" />
+              <span>ORIGINAL</span>
+            </a>
+            <a href="/home">
+              <img src={moviesImg} alt="" />
+              <span>MOVIES</span>
+            </a>
+            <a href="/home">
+              <img src={seriesImg} alt="" />
+              <span>SERIES</span>
+            </a>
+          </NavMenu>
+          <SignOut>
+            <UserImg src={userPhoto} alt={userName} />
+            <DropDown>
+              <span onClick={handleAuth}>Sign Out</span>
+            </DropDown>
+          </SignOut>
+        </>
+      )}
     </Nav>
   );
 };
@@ -153,10 +211,47 @@ const Login = styled.a`
   border: 1px solid #f9f9f9;
   border-radius: 5px;
   transition: all 0.2s ease 0s;
+  cursor: pointer;
+
   &:hover {
     background-color: #f9f9f9;
     color: #000;
   }
 `;
 
+const UserImg = styled.img`
+  height: 100%;
+  border-radius: 50%;
+`;
+
+const DropDown = styled.div`
+  position: absolute;
+  right: 0px;
+  top: 45px;
+  background-color: rgb(19, 19, 19);
+  border: 1px solid rgba(151, 151, 151, 0.3);
+  border-radius: 4px;
+  font-size: 1rem;
+  letter-spacing: 1.4px;
+  padding: 10px;
+  width: 100px;
+  opacity: 0;
+`;
+
+const SignOut = styled.div`
+  position: relative;
+  height: 48px;
+  width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  &:hover {
+    ${DropDown} {
+      opacity: 1;
+      transition-duration: 1s;
+    }
+  }
+`;
 export default Header;
